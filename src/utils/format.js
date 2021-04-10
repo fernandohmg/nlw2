@@ -22,7 +22,7 @@ const weekdays = [
 ];
 
 function getSubject(subjectId) {
-  return subjects.find((element) => element.id === subjectId).name;
+  return subjects.find((element) => element.id == subjectId).name;
 }
 
 function convertHoursToMinutes(time) {

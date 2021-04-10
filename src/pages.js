@@ -36,6 +36,11 @@ const pageStudy = async (req, res) => {
   try {
     const db = await Database;
     const proffys = await db.all(query);
+
+    proffys.forEach((proffy) => {
+      proffy.subject = getSubject(proffy.subject);
+    });
+
     return res.render("study.html", { filters, subjects, weekdays, proffys });
   } catch (error) {
     console.log(error);
@@ -43,13 +48,45 @@ const pageStudy = async (req, res) => {
 };
 
 const pageGiveClasses = (req, res) => {
-  const data = req.query;
-  if (Object.keys(data).length > 0) {
-    data.subject = getSubject(data.subject);
-    proffys.push(data);
-    return res.redirect("/study");
-  }
   return res.render("give-classes.html", { subjects, weekdays });
 };
 
-module.exports = { pageLanding, pageStudy, pageGiveClasses };
+const saveClass = async (req, res) => {
+  const reqBody = req.body;
+  const createProffy = require("./database/createProffy");
+
+  const proffyValue = {
+    name: reqBody.name,
+    avatar: reqBody.avatar,
+    whatsapp: reqBody.whatsapp,
+    bio: reqBody.bio,
+  };
+
+  const classValue = {
+    subject: reqBody.subject,
+    cost: reqBody.cost,
+  };
+
+  const classScheduleValues = reqBody.weekday.map((weekday, index) => {
+    return {
+      weekday,
+      time_from: convertHoursToMinutes(reqBody.time_from[index]),
+      time_to: convertHoursToMinutes(reqBody.time_to[index]),
+    };
+  });
+
+  try {
+    const db = await Database;
+    await createProffy(db, { proffyValue, classValue, classScheduleValues });
+
+    let queryString = "?subject=" + reqBody.subject;
+    queryString += "&weekday=" + reqBody.weekday[0];
+    queryString += "&time=" + reqBody.time_from[0];
+
+    return res.redirect("/study" + queryString);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+module.exports = { pageLanding, pageStudy, pageGiveClasses, saveClass };
